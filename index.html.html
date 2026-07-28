@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Descubra suas chances no Minha Casa Minha Vida</title>
+<style>
+  :root{
+    --green:#16A34A;
+    --green-dark:#15803D;
+    --green-bg:#EAF7EF;
+    --blue:#2563EB;
+    --gray-bg:#F5F7FA;
+    --gray-line:#E5E9F0;
+    --gray-text:#6B7280;
+    --ink:#111827;
+    --white:#FFFFFF;
+    --radius:18px;
+    --shadow: 0 18px 40px -18px rgba(17,24,39,0.18);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:var(--font);
+    background:var(--gray-bg);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 16px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  .app{ width:100%; max-width:460px; }
+
+  .card{
+    background:var(--white);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:30px 24px 26px;
+    position:relative;
+    overflow:hidden;
+    animation: rise .45s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
+
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+
+  /* progress */
+  .progress-wrap{ margin-bottom:20px; }
+  .progress-label{
+    display:flex; justify-content:space-between;
+    font-size:12.5px; font-weight:600; color:var(--gray-text);
+    margin-bottom:7px;
+  }
+  .progress-label b{ color:var(--green-dark); }
+  .progress-bar{ height:8px; background:var(--gray-line); border-radius:8px; overflow:hidden; }
+  .progress-fill{
+    height:100%; background:var(--green); border-radius:8px;
+    transition: width .5s cubic-bezier(.2,.8,.2,1); width:0%;
+  }
+
+  .eyebrow{
+    display:inline-block; font-size:12px; font-weight:700;
+    color:var(--green-dark); background:var(--green-bg);
+    padding:5px 11px; border-radius:20px; margin-bottom:14px;
+  }
+
+  h1{ font-size:24px; line-height:1.3; margin:0 0 10px; font-weight:800; color:var(--ink); }
+  h2{ font-size:20px; line-height:1.32; margin:0 0 18px; font-weight:800; color:var(--ink); }
+  p.sub{ font-size:14.5px; line-height:1.55; color:var(--gray-text); margin:0 0 22px; }
+
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .opt{
+    width:100%; text-align:left; background:var(--white);
+    border:1.5px solid var(--gray-line); border-radius:14px;
+    padding:14px 16px; font-family:var(--font); font-size:14.5px; font-weight:600;
+    color:var(--ink); cursor:pointer; transition:all .15s ease;
+    display:flex; align-items:center; gap:12px;
+  }
+  .opt:hover{ border-color:var(--green); background:var(--green-bg); transform:translateY(-1px); }
+  .opt:active{ transform:translateY(0) scale(.99); }
+  .opt.selected{ border-color:var(--green); background:var(--green-bg); }
+  .opt-dot{
+    width:20px; height:20px; border-radius:50%; border:2px solid var(--gray-line);
+    flex:none; position:relative; transition:all .15s ease;
+  }
+  .opt.selected .opt-dot{ border-color:var(--green); background:var(--green); }
+  .opt.selected .opt-dot::after{
+    content:''; position:absolute; inset:4px; border-radius:50%; background:var(--white);
+  }
+
+  .text-field{
+    width:100%; border:1.5px solid var(--gray-line); border-radius:14px;
+    padding:14px 16px; font-family:var(--font); font-size:15px; color:var(--ink);
+    margin-bottom:16px; outline:none; transition:border-color .15s ease;
+  }
+  .text-field:focus{ border-color:var(--green); }
+
+  .btn-primary{
+    width:100%; background:var(--green); color:var(--white); border:none;
+    border-radius:14px; padding:16px 20px; font-family:var(--font);
+    font-size:15.5px; font-weight:800; cursor:pointer;
+    box-shadow:0 12px 24px -10px rgba(22,163,74,0.5);
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primary:hover{ background:var(--green-dark); transform:translateY(-2px); }
+  .btn-primary:active{ transform:translateY(0); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  .intro-emoji{ font-size:38px; margin-bottom:14px; }
+
+  /* loading */
+  .loading-screen{ text-align:center; padding:14px 4px 6px; }
+  .loading-ring{
+    width:56px; height:56px; margin:0 auto 22px;
+    border:5px solid var(--gray-line); border-top-color:var(--green);
+    border-radius:50%; animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-text{ font-size:15px; font-weight:700; color:var(--ink); min-height:22px; margin-bottom:16px; }
+  .loading-bar{ height:8px; background:var(--gray-line); border-radius:8px; overflow:hidden; }
+  .loading-fill{ height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); width:0%; transition:width 1s linear; }
+
+  /* result */
+  .result-emoji{ font-size:34px; margin-bottom:10px; }
+  .benefit-list{ list-style:none; padding:0; margin:0 0 18px; display:flex; flex-direction:column; gap:9px; }
+  .benefit-list li{
+    display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600;
+    color:var(--ink); background:var(--green-bg); border-radius:12px; padding:11px 13px;
+  }
+  .benefit-list svg{ width:18px; height:18px; flex:none; }
+  .warning-box{
+    display:flex; gap:9px; align-items:flex-start; background:#FFF8E6;
+    border:1px solid #FBE7B6; border-radius:12px; padding:11px 13px;
+    font-size:12.5px; color:#8A6100; line-height:1.5; margin-bottom:22px;
+  }
+
+  .cta-box{
+    background:var(--gray-bg); border-radius:16px; padding:20px 18px; text-align:center;
+  }
+  .cta-box h3{ font-size:17px; margin:0 0 8px; font-weight:800; }
+  .cta-box p{ font-size:13.5px; color:var(--gray-text); margin:0 0 16px; line-height:1.5; }
+
+  .btn-back{
+    background:none; border:none; color:var(--gray-text); font-family:var(--font);
+    font-size:13px; font-weight:600; cursor:pointer; padding:0 0 16px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .btn-back:hover{ color:var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card" id="card">
+
+    <!-- TELA 1 - INTRO -->
+    <div class="screen active" data-screen="intro">
+      <div class="intro-emoji">🏡</div>
+      <span class="eyebrow">Simulação gratuita · leva 2 minutos</span>
+      <h1>Descubra se você já pode conquistar seu imóvel pelo Minha Casa Minha Vida.</h1>
+      <p class="sub">Responda algumas perguntas rápidas e descubra gratuitamente suas chances de aprovação.</p>
+      <button class="btn-primary" onclick="startQuiz()">COMEÇAR</button>
+    </div>
+
+    <!-- PERGUNTAS 1-10 (geradas dinamicamente) -->
+    <div class="screen" data-screen="question">
+      <div class="progress-wrap" id="progress-box"></div>
+      <h2 id="q-title"></h2>
+      <div class="options" id="q-options"></div>
+      <input type="text" class="text-field" id="q-textinput" style="display:none;" placeholder="Digite o nome da cidade">
+      <button class="btn-primary" id="q-continue" style="display:none;" onclick="submitTextAnswer()">Continuar</button>
+    </div>
+
+    <!-- LOADING -->
+    <div class="screen" data-screen="loading">
+      <div class="loading-screen">
+        <div class="loading-ring"></div>
+        <div class="loading-text" id="loading-text">Estamos analisando seu perfil...</div>
+        <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div class="screen" data-screen="result">
+      <div class="result-emoji">🎉</div>
+      <span class="eyebrow">Boa notícia!</span>
+      <h1 style="font-size:22px;">Pelas suas respostas, seu perfil possui grandes chances de conseguir um financiamento pelo Minha Casa Minha Vida.</h1>
+      <p class="sub">Você pode ter acesso a benefícios como:</p>
+      <ul class="benefit-list" id="benefit-list"></ul>
+      <div class="warning-box" id="warning-box"></div>
+
+      <div class="cta-box">
+        <h3>Agora faça sua simulação GRATUITA.</h3>
+        <p>Clique no botão abaixo e fale diretamente com um especialista. Vamos analisar gratuitamente seu perfil, verificar sua aprovação e apresentar os melhores empreendimentos disponíveis para você.</p>
+        <button class="btn-primary" id="cta-whatsapp-btn" onclick="openWhatsApp()"></button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO
+   ============================================================ */
+const WHATSAPP_NUMBER = "5562994235307";
+const WHATSAPP_MESSAGE = "Olá! Acabei de finalizar o quiz e gostaria de fazer minha simulação gratuita do Minha Casa Minha Vida.";
+
+/* ============================================================
+   BANCO DE PERGUNTAS
+   type: 'single' (botões) ou 'text' (campo de texto)
+   ============================================================ */
+const QUESTIONS = [
+  { key:'renda', title:'Qual é sua renda familiar mensal?', type:'single',
+    options:['Até R$ 2.500','Entre R$ 2.500 e R$ 4.000','Entre R$ 4.000 e R$ 6.000','Acima de R$ 6.000'] },
+  { key:'tipo_imovel', title:'Você procura:', type:'single',
+    options:['Casa','Apartamento','Ainda estou decidindo'] },
+  { key:'finalidade', title:'O imóvel será:', type:'single',
+    options:['Para morar','Para investir'] },
+  { key:'moradia_atual', title:'Você mora atualmente:', type:'single',
+    options:['Aluguel','Casa própria','Com familiares','Outro'] },
+  { key:'entrada', title:'Já possui entrada?', type:'single',
+    options:['Sim','Não','Estou juntando'] },
+  { key:'fgts', title:'Você possui FGTS?', type:'single',
+    options:['Sim','Não','Não sei'] },
+  { key:'financiamento', title:'Você já tentou financiamento?', type:'single',
+    options:['Nunca','Sim, mas não fui aprovado','Sim e fui aprovado'] },
+  { key:'cidade', title:'Qual cidade você pretende comprar?', type:'text' },
+  { key:'prazo', title:'Quando pretende comprar?', type:'single',
+    options:['Imediatamente','Nos próximos 3 meses','Até 6 meses','Apenas pesquisando'] },
+  { key:'prioridade', title:'O que é mais importante para você?', type:'single',
+    options:['Menor parcela','Menor entrada','Condomínio completo','Boa localização','Segurança','Área de lazer'] },
+];
+
+const TOTAL_Q = QUESTIONS.length;
+
+/* Objeto final com todas as respostas do usuário */
+const quizData = {};
+
+let currentQ = 0;
+
+/* ============================================================
+   INTEGRAÇÕES FUTURAS (Facebook Pixel / GA / GTM / CRM / RD / Zapier)
+   Chame trackEvent(nome, dados) nos pontos já marcados abaixo.
+   ============================================================ */
+function trackEvent(eventName, data){
+  // --- Facebook Pixel ---
+  // if (typeof fbq === 'function') fbq('trackCustom', eventName, data);
+
+  // --- Google Analytics (GA4) ---
+  // if (typeof gtag === 'function') gtag('event', eventName, data);
+
+  // --- Google Tag Manager (dataLayer) ---
+  // window.dataLayer = window.dataLayer || [];
+  // window.dataLayer.push({ event: eventName, ...data });
+
+  // --- CRM / RD Station (via webhook) ---
+  // fetch('https://SEU_ENDPOINT_CRM/webhook', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ event: eventName, ...data })
+  // });
+
+  // --- Zapier (via Webhook do Zapier) ---
+  // fetch('https://hooks.zapier.com/hooks/catch/SEU_HOOK_ID/', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ event: eventName, ...data })
+  // });
+
+  console.log('[trackEvent]', eventName, data); // remova em produção
+}
+
+function goTo(screenId){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`[data-screen="${screenId}"]`).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function startQuiz(){
+  trackEvent('quiz_started', {}); // <- ponto de disparo: início do quiz
+  currentQ = 0;
+  goTo('question');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[currentQ];
+  const percent = Math.round((currentQ/TOTAL_Q)*100);
+
+  document.getElementById('progress-box').innerHTML = `
+    <div class="progress-label"><span>Pergunta <b>${currentQ+1}</b> de ${TOTAL_Q}</span><span>${percent}%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+  `;
+  document.getElementById('q-title').textContent = q.title;
+
+  const optsWrap = document.getElementById('q-options');
+  const textInput = document.getElementById('q-textinput');
+  const continueBtn = document.getElementById('q-continue');
+
+  if(q.type === 'single'){
+    optsWrap.style.display = 'flex';
+    textInput.style.display = 'none';
+    continueBtn.style.display = 'none';
+    optsWrap.innerHTML = q.options.map((label,i)=>`
+      <button class="opt" onclick="selectOption(${i})">
+        <span class="opt-dot"></span>
+        <span>${label}</span>
+      </button>
+    `).join('');
+  } else {
+    optsWrap.style.display = 'none';
+    optsWrap.innerHTML = '';
+    textInput.style.display = 'block';
+    textInput.value = '';
+    continueBtn.style.display = 'flex';
+    textInput.focus();
+  }
+}
+
+function selectOption(idx){
+  const q = QUESTIONS[currentQ];
+  const value = q.options[idx];
+  quizData[q.key] = value;
+
+  trackEvent('quiz_question_answered', { question: q.key, answer: value, step: currentQ+1 }); // <- ponto de disparo: cada resposta
+
+  document.querySelectorAll('#q-options .opt').forEach(el=>el.classList.remove('selected'));
+  document.querySelectorAll('#q-options .opt')[idx].classList.add('selected');
+
+  setTimeout(advanceQuestion, 220);
+}
+
+function submitTextAnswer(){
+  const q = QUESTIONS[currentQ];
+  const input = document.getElementById('q-textinput');
+  const value = input.value.trim();
+  if(!value){ input.focus(); return; }
+  quizData[q.key] = value;
+
+  trackEvent('quiz_question_answered', { question: q.key, answer: value, step: currentQ+1 }); // <- ponto de disparo: cada resposta
+
+  advanceQuestion();
+}
+
+function advanceQuestion(){
+  currentQ++;
+  if(currentQ < TOTAL_Q){
+    renderQuestion();
+  } else {
+    trackEvent('quiz_completed', quizData); // <- ponto de disparo: quiz finalizado, quizData tem todas as respostas
+    goTo('loading');
+    runLoadingSequence();
+  }
+}
+
+function runLoadingSequence(){
+  const messages = [
+    'Estamos analisando seu perfil...',
+    'Consultando critérios...',
+    'Verificando possibilidades...',
+    'Calculando benefícios...'
+  ];
+  const textEl = document.getElementById('loading-text');
+  const fillEl = document.getElementById('loading-fill');
+  let step = 0;
+
+  textEl.textContent = messages[0];
+  fillEl.style.width = '0%';
+  requestAnimationFrame(()=>{ fillEl.style.width = '100%'; fillEl.style.transition = 'width 4s linear'; });
+
+  const interval = setInterval(()=>{
+    step++;
+    if(step < messages.length){
+      textEl.textContent = messages[step];
+    } else {
+      clearInterval(interval);
+    }
+  }, 1000);
+
+  setTimeout(()=>{
+    goTo('result');
+    trackEvent('quiz_result_viewed', quizData); // <- ponto de disparo: usuário viu o resultado
+  }, 4000);
+}
+
+function openWhatsApp(){
+  trackEvent('whatsapp_cta_clicked', quizData); // <- ponto de disparo: clique no CTA final (evento de conversão)
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+  window.open(url, '_blank');
+}
+
+/* Ícones SVG usados no resultado (inline, sem dependências externas) */
+const ICON_CHECK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ICON_WARN = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8A6100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px;"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a1 1 0 00.9 1.5h17a1 1 0 00.9-1.5L13.7 3.9a1 1 0 00-1.7 0z"/></svg>';
+const ICON_WHATSAPP = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" style="flex:none;"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.2-.5.1-.2 0-.3 0-.5-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s1 2.6 1.1 2.7c.1.2 2 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.4 5.1L2 22l5.1-1.3c1.4.8 3.1 1.2 4.9 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.2c-1.6 0-3.2-.4-4.5-1.2l-.3-.2-3 .8.8-2.9-.2-.3C4 15 3.5 13.5 3.5 12c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5-3.8 8.5-8.5 8.5z"/></svg>';
+
+const BENEFITS = [
+  'Subsídios do Governo',
+  'Utilização do FGTS',
+  'Entrada facilitada',
+  'Parcelas que podem ficar próximas ao valor de um aluguel'
+];
+
+function renderResultScreen(){
+  document.getElementById('benefit-list').innerHTML = BENEFITS
+    .map(b => `<li>${ICON_CHECK} <span>${b}</span></li>`)
+    .join('');
+
+  document.getElementById('warning-box').innerHTML =
+    `${ICON_WARN} <span>A análise definitiva depende da documentação e da avaliação de crédito do agente financeiro.</span>`;
+
+  document.getElementById('cta-whatsapp-btn').innerHTML =
+    `${ICON_WHATSAPP} QUERO MINHA SIMULAÇÃO GRATUITA`;
+}
+
+document.addEventListener('DOMContentLoaded', renderResultScreen);
+</script>
+</body>
+</html>
